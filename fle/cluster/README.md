@@ -1,112 +1,71 @@
 # Local Factorio Cluster
 
-This directory contains scripts and configuration files for running and managing multiple Factorio game servers locally using Docker containers.
+This directory contains the compose generator and configuration for running
+multiple headless Factorio servers locally in Docker.
 
 ## Overview
 
-The system allows you to:
+- Create and manage N Factorio server instances with Docker Compose
+- Configure server settings, ports, and resources per instance
+- Choose between scenarios (`open_world` or `default_lab_scenario`)
+- Start from a Factorio save file instead of a scenario
 
-- Create and manage multiple Factorio server instances using Docker
-- Automatically connect to and initialize each server instance
-- Configure server settings, ports, and resources for each instance
-- Share scenarios across instances
-- Choose between different scenarios (open_world or default_lab_scenario)
+Cluster management lives in `run_envs.py` (`ComposeGenerator` +
+`ClusterManager`) and is exposed through the `fle cluster` CLI. The generated
+`docker-compose.yml` is written to the platform state directory
+(`platformdirs.user_state_dir("fle")`, overridable with `FLE_STATE_DIR`), not
+into the package.
 
-## `run-envs.sh`
-
- - Main script for generating compose yaml
- - Running and managing Factorio instances with options for scenario selection
-
-## Setup and Usage
-
-### Prerequisites
-
-- Docker installed and running
-- Optional: Factorio game client installed locally
-
-### Managing Server Instances with run-envs.sh
-
-The `run-envs.sh` script provides a convenient way to start, stop, and manage Factorio server instances.
-
-#### Basic Usage
+## Usage
 
 ```bash
-# Start a single instance with default settings (default_lab_scenario)
-./run-envs.sh
+# Start a single instance with the default lab scenario
+fle cluster start
 
-# Start 5 instances with default scenario
-./run-envs.sh -n 5
+# Start 5 instances
+fle cluster start -n 5
 
-# Start 3 instances with open_world scenario
-./run-envs.sh -n 3 -s open_world
+# Start 3 instances with the open_world scenario
+fle cluster start -n 3 -s open_world
 
-# Stop all running instances
-./run-envs.sh stop
+# Start from a save file
+fle cluster start --save path/to/save.zip
 
-# Restart the current cluster with the same configuration
-./run-envs.sh restart
+# Stop / restart the cluster
+fle cluster stop
+fle cluster restart
 
-# Show help information
-./run-envs.sh help
+# Show running containers / tail a server's logs
+fle cluster show
+fle cluster logs factorio_0
 ```
 
-#### Command Line Options
+### Options
 
-- `-n NUMBER` - Number of Factorio instances to run (1-33, default: 1)
-- `-s SCENARIO` - Scenario to run (open_world or default_lab_scenario, default: default_lab_scenario)
+- `-n NUMBER` — number of Factorio instances (default: 1)
+- `-s SCENARIO` — `open_world` or `default_lab_scenario` (default)
+- `--save FILE` — start the server from a save zip (must contain `level.dat`)
 
-#### Available Commands
+## Server configuration
 
-- `start` - Start Factorio instances (default command)
-- `stop` - Stop all running instances
-- `restart` - Restart the current cluster with the same configuration
-- `help` - Show help information
-
-#### Examples with Explicit Commands
-
-```bash
-# Start 10 instances with open_world scenario
-./run-envs.sh start -n 10 -s open_world
-
-# Restart the current cluster
-./run-envs.sh restart
-```
-
-
-### Server Configuration
-
-Each Factorio instance is configured with:
+Each instance runs `factoriotools/factorio:<FACTORIO_VERSION>` (the version
+constant lives in `fle/commons/constants.py`) with:
 
 - Resource limits: 1 CPU core and 1024MB memory
-- Shared scenarios directory
-- Unique UDP port for game traffic (starting at 34197)
-- Unique TCP port for RCON (starting at 27015)
-- Choice of scenario (open_world or default_lab_scenario)
+- Game port (UDP): `34197 + instance_number`
+- RCON port (TCP): `27000 + instance_number`
+- RCON password: `factorio` (override with `FLE_RCON_PASSWORD`)
 
-## Port Mappings
+## Volume mounts
 
-- Game ports (UDP): 34197 + instance_number
-- RCON ports (TCP): 27000 + instance_number
-
-## Volume Mounts
-
-The following directories are mounted in each container:
-
-- Scenarios: `../scenarios/default_lab_scenario`, `../scenarios/open_world`
-- Mods: `~/Applications/Factorio.app/Contents/Resources/mods`
-- Screenshots: `../../data/_screenshots`
-
-## Notes
-
-- The server instances use the `factorio:latest` Docker image (which you can build from the provided Dockerfile in the `docker` directory)
-- Each instance can run with either the `default_lab_scenario` or `open_world` scenario
-- RCON password is set to "factorio"
-- Containers are configured to restart unless stopped manually
+- Scenarios and config: bundled package resources (read-only binds)
+- Mod list: bundled `mods/mod-list.json` (disables Space Age DLC mods)
+- Screenshots: `<work_dir>/.fle/data/_screenshots` → `/opt/factorio/script-output`
+- Saves (only with `--save`): `<state_dir>/saves`
 
 ## Troubleshooting
 
-If you encounter issues:
-
-1. Ensure Docker is running and has sufficient resources
-2. Check container logs using `docker logs factorio_<instance_number>`
-3. Verify port availability using `netstat` or similar tools
+1. Ensure Docker is running and has enough resources (1 core per instance)
+2. `fle cluster logs factorio_<n>` to inspect a server
+3. Port conflicts are reported at start; stop the previous cluster with
+   `fle cluster stop`

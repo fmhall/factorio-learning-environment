@@ -24,23 +24,27 @@ def fle_init():
 
 
 def fle_cluster(args):
-    cluster_path = Path(__file__).parent / "cluster"
-    script = cluster_path / "run-envs.sh"
-    if not script.exists():
-        print(f"Cluster script not found: {script}", file=sys.stderr)
-        sys.exit(1)
-    cmd = [str(script)]
-    if args:
-        if args.cluster_command:
-            cmd.append(args.cluster_command)
-        if args.n:
-            cmd.extend(["-n", str(args.n)])
-        if args.s:
-            cmd.extend(["-s", args.s])
+    from fle.cluster.run_envs import ClusterManager
+
+    command = args.cluster_command or "start"
     try:
-        subprocess.run(cmd, cwd=str(cluster_path), check=True)
+        manager = ClusterManager()
+        if command == "start":
+            manager.start(
+                num_instances=args.n or 1,
+                scenario=args.s or "default_lab_scenario",
+                save_file=args.save,
+            )
+        elif command == "stop":
+            manager.stop()
+        elif command == "restart":
+            manager.restart()
+        elif command == "logs":
+            manager.logs(args.service or "factorio_0")
+        elif command == "show":
+            manager.show()
     except subprocess.CalledProcessError as e:
-        print(f"Error running cluster script: {e}", file=sys.stderr)
+        print(f"Error running cluster command: {e}", file=sys.stderr)
         sys.exit(e.returncode)
 
 
@@ -489,6 +493,8 @@ def sandbox_build(force: bool = False) -> bool:
     print(f"  Build context: {build_context}")
     print(f"  Dockerfile:    {dockerfile}")
 
+    from fle.commons.constants import FACTORIO_VERSION
+
     cmd = [
         "docker",
         "build",
@@ -496,6 +502,8 @@ def sandbox_build(force: bool = False) -> bool:
         str(dockerfile),
         "-t",
         SANDBOX_IMAGE,
+        "--build-arg",
+        f"FACTORIO_VERSION={FACTORIO_VERSION}",
         str(build_context),
     ]
     try:
@@ -557,25 +565,35 @@ Examples:
   fle sandbox build --force  # Rebuild the sandbox Docker image
 
   # Other commands
-  fle cluster [start|stop|restart|help] [-n N] [-s SCENARIO]
+  fle cluster [start|stop|restart|logs|show] [-n N] [-s SCENARIO] [--save FILE]
   fle sprites [--force] [--workers N]
         """,
     )
     subparsers = parser.add_subparsers(dest="command")
     parser_cluster = subparsers.add_parser(
-        "cluster", help="Setup Docker containers (run run-envs.sh)"
+        "cluster", help="Manage the local Factorio server cluster (Docker Compose)"
     )
     parser_cluster.add_argument(
         "cluster_command",
         nargs="?",
-        choices=["start", "stop", "restart", "help"],
-        help="Cluster command (start/stop/restart/help)",
+        choices=["start", "stop", "restart", "logs", "show"],
+        help="Cluster command (default: start)",
+    )
+    parser_cluster.add_argument(
+        "service",
+        nargs="?",
+        help="Service name for 'logs' (default: factorio_0)",
     )
     parser_cluster.add_argument("-n", type=int, help="Number of Factorio instances")
     parser_cluster.add_argument(
         "-s",
         type=str,
         help="Scenario (open_world or default_lab_scenario)",
+    )
+    parser_cluster.add_argument(
+        "--save",
+        type=str,
+        help="Path to a Factorio save zip to start the server from",
     )
     parser_inspect = subparsers.add_parser(
         "inspect-eval", help="Run evaluation using Inspect framework"

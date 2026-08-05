@@ -12,9 +12,11 @@ import zipfile
 import importlib.resources as ir
 from platformdirs import user_state_dir
 
+from fle.commons.constants import FACTORIO_VERSION
+
 START_RCON_PORT = 27000
 START_GAME_PORT = 34197
-RCON_PASSWORD = "factorio"
+RCON_PASSWORD = os.environ.get("FLE_RCON_PASSWORD", "factorio")
 
 
 def resolve_state_dir() -> Path:
@@ -59,7 +61,7 @@ class ComposeGenerator:
     """Compose YAML generator with centralized path handling."""
 
     rcon_password = RCON_PASSWORD
-    image = "factoriotools/factorio:2.0.73"
+    image = f"factoriotools/factorio:{FACTORIO_VERSION}"
     map_gen_seed = 44340
     internal_rcon_port = 27015
     internal_game_port = 34197
@@ -337,7 +339,7 @@ class ClusterManager:
             print("  " + ", ".join(listening))
             print(
                 "It looks like a Factorio cluster (or another service) is running. "
-                "Stop it with 'fle cluster stop' (or 'docker compose -f docker-compose.yml down' in fle/cluster) and retry."
+                "Stop it with 'fle cluster stop' and retry."
             )
             sys.exit(1)
 

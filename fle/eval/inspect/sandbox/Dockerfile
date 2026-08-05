@@ -1,3 +1,7 @@
+# Keep in sync with FACTORIO_VERSION in fle/commons/constants.py; `fle sandbox
+# build` passes this automatically.
+ARG FACTORIO_VERSION=2.0.73
+
 # =============================================================================
 # Stage 1: Build FLE wheel from source
 # =============================================================================
@@ -13,7 +17,8 @@ RUN pip install --no-cache-dir build \
 # =============================================================================
 # Stage 2: Runtime image based on Factorio server
 # =============================================================================
-FROM factoriotools/factorio:2.0.73
+ARG FACTORIO_VERSION
+FROM factoriotools/factorio:${FACTORIO_VERSION}
 
 USER root
 

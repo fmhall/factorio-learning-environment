@@ -4,6 +4,12 @@ Common constants for the Factorio Learning Environment.
 
 REWARD_OVERRIDE_KEY = "reward_override"
 
+# The Factorio server version the Lua tool layer is written against.
+# Single source of truth: the cluster compose generator and the sandbox image
+# build both read this. The sandbox Dockerfile declares a matching ARG default
+# for standalone builds.
+FACTORIO_VERSION = "2.0.73"
+
 # Model Names for Different Providers (Updated September 2025)
 # Based on actual API documentation and web search results
 # ===========================================================
