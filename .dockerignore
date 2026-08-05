@@ -16,3 +16,6 @@ build
 dist
 outputs
 logs
+data
+.fle
+.env

@@ -32,10 +32,9 @@ An open source framework for developing and evaluating LLM agents in the game of
 pip install factorio-learning-environment
 
 # With optional features
-pip install factorio-learning-environment[eval]      # For running experiments
-pip install factorio-learning-environment[mcp]       # For MCP protocol support  
-pip install factorio-learning-environment[psql]      # For PostgreSQL support
-pip install factorio-learning-environment[eval,mcp,psql]  # All features
+pip install factorio-learning-environment[eval]      # Statistical analysis extras (pandas/scipy)
+pip install factorio-learning-environment[mcp]       # For MCP protocol support
+pip install factorio-learning-environment[eval,mcp]  # All features
 
 # Using uv (recommended)
 uv sync

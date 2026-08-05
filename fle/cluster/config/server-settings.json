@@ -16,7 +16,7 @@
     "lan": true
   },
   "_comment_token": "Authentication token. May be used instead of 'password' above.",
-  "token": "3799e696-74c0-4d6f-9f55-80fc737a17ab",
+  "token": "",
   "game_password": "",
   "_comment_require_user_verification": "When set to true, the server will only allow clients that have a valid Factorio.com account",
   "require_user_verification": false,
