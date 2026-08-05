@@ -44,15 +44,6 @@ def fle_cluster(args):
         sys.exit(e.returncode)
 
 
-def fle_eval(args):
-    try:
-        _ = str(Path(args.config))  # Validate config path exists
-        raise Exception("Eval is not supported anymore - Use `inspect-eval` instead")
-    except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
 def fle_inspect_eval(args):
     """New command: fle inspect-eval using Inspect framework"""
     _eval_integration_dir = Path(__file__).parent / "eval" / "inspect" / "integration"
@@ -566,7 +557,6 @@ Examples:
   fle sandbox build --force  # Rebuild the sandbox Docker image
 
   # Other commands
-  fle eval --config configs/gym_run_config.json
   fle cluster [start|stop|restart|help] [-n N] [-s SCENARIO]
   fle sprites [--force] [--workers N]
         """,
@@ -587,9 +577,6 @@ Examples:
         type=str,
         help="Scenario (open_world or default_lab_scenario)",
     )
-    parser_eval = subparsers.add_parser("eval", help="Run experiment")
-    parser_eval.add_argument("--config", required=True, help="Path to run config JSON")
-
     parser_inspect = subparsers.add_parser(
         "inspect-eval", help="Run evaluation using Inspect framework"
     )
@@ -753,8 +740,6 @@ Examples:
         fle_init()
     if args.command == "cluster":
         fle_cluster(args)
-    elif args.command == "eval":
-        fle_eval(args)
     elif args.command == "inspect-eval":
         fle_inspect_eval(args)
     elif args.command == "sprites":

@@ -53,7 +53,7 @@ source .venv/bin/activate
 fle cluster start
 
 # Run evaluation trajectories (requires [eval] dependencies)
-fle eval --config configs/gym_run_config.json
+fle inspect-eval --env-id iron_plate_throughput --model anthropic/claude-sonnet-5
 ```
 
 ## Environment
