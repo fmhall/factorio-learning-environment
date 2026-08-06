@@ -211,7 +211,20 @@ async def get_simple_server_pool(max_servers: int = 32) -> SimpleServerPool:
     if _simple_server_pool is None:
         # Check for server range environment variables
         start_idx = int(os.getenv("FLE_SERVER_START", "0"))
-        end_idx = int(os.getenv("FLE_SERVER_END", str(max_servers)))
+        end_env = os.getenv("FLE_SERVER_END")
+        if end_env is not None:
+            end_idx = int(end_env)
+        else:
+            # Default to the number of actually-running containers so excess
+            # samples queue for a free server instead of being handed an
+            # index with no container behind it.
+            try:
+                from fle.commons.cluster_ips import get_local_container_ips
+
+                _, _, tcp_ports = get_local_container_ips()
+                end_idx = min(max(len(tcp_ports), 1), max_servers)
+            except Exception:
+                end_idx = max_servers
 
         _simple_server_pool = SimpleServerPool(
             max_servers=max_servers, start_idx=start_idx, end_idx=end_idx
