@@ -57,5 +57,5 @@ storage.actions.save_blueprint = function(player_index)
     -- Clear cursor and delete blueprint
     bp.clear()
 
-    return dump({blueprint='\"'..stack_string..'\"', center_x=center_x, center_y=center_y})
+    return {blueprint=stack_string, center_x=center_x, center_y=center_y}
 end

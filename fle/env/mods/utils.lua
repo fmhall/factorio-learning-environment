@@ -204,6 +204,57 @@ function dump(o)
    end
 end
 
+-- Strip values helpers.table_to_json cannot encode: functions, userdata,
+-- threads, cycles, NaN/inf, and non-scalar keys.
+function clean_for_json(o, seen)
+   local t = type(o)
+   if t == "table" then
+      if seen[o] then return nil end
+      seen[o] = true
+      local out = {}
+      for k, v in pairs(o) do
+         local kt = type(k)
+         if kt == "string" or kt == "number" then
+            local cv = clean_for_json(v, seen)
+            if cv ~= nil then out[k] = cv end
+         end
+      end
+      seen[o] = nil
+      return out
+   elseif t == "number" then
+      if o ~= o or o == math.huge or o == -math.huge then return tostring(o) end
+      return o
+   elseif t == "string" or t == "boolean" then
+      return o
+   elseif t == "nil" then
+      return nil
+   else
+      return tostring(o)
+   end
+end
+
+-- JSON envelope for the Python tool dispatcher (fle/env/tools/controller.py).
+-- Every tool response is rcon.print(encode_result(pcall(...))): a marker
+-- prefix followed by a proper JSON payload {a = ok, b = result}. Tools that
+-- already return a JSON string get their payload embedded structurally so the
+-- Python side sees one uniform format.
+function encode_result(ok, result)
+   local payload = {a = ok or false, b = result}
+   local success, json = pcall(helpers.table_to_json, payload)
+   if not success then
+      success, json = pcall(function()
+         return helpers.table_to_json(clean_for_json(payload, {}))
+      end)
+   end
+   if not success then
+      json = helpers.table_to_json({
+         a = false,
+         b = "unserializable result: " .. tostring(result),
+      })
+   end
+   return "###FLE:J###" .. json
+end
+
 function storage.utils.inspect(player, radius, position)
     local surface = player.surface
     local bounding_box = {

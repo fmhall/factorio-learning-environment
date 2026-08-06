@@ -430,7 +430,7 @@ storage.actions.score = function()
       --if goal_description ~= nil and #goal_description > 1 then
         --production_score["goal"] = goal_description[1]:gsub("-", "_")
       --end
-      return dump(prod_score)
+      return prod_score
     end
-    return dump(prod_score)
+    return prod_score
 end

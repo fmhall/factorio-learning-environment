@@ -93,20 +93,20 @@ storage.actions.inspect_inventory = function(player_index, is_character_inventor
                 table.insert(all_inventories, {})
             end
         end
-        return dump(all_inventories)
+        return all_inventories
     end
 
     if is_character_inventory then
        local inventory_items = get_player_inventory_items(player)
        if inventory_items then
-           return dump(inventory_items)
+           return inventory_items
        else
            error("Could not get player inventory")
        end
     else
        local inventory_items = get_inventory()
        if inventory_items then
-           return dump(inventory_items)
+           return inventory_items
        else
            error("Could not get inventory of entity at "..x..", "..y)
        end

@@ -60,5 +60,5 @@ storage.actions.get_entities = function(player_index, radius, entity_names_json,
         end)
         -- Silently continue on any error - don't let one bad entity break the whole call
     end
-    return dump(result)
+    return result
 end

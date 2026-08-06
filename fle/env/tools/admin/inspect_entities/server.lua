@@ -119,5 +119,5 @@ storage.actions.inspect_entities = function(player_index, radius, position_x, po
         table.insert(result, entity_info)
     end
 
-    return dump(result)
+    return result
 end

@@ -153,5 +153,5 @@ storage.actions.render_simple = function(player_index, method, arg1, arg2, arg3,
         position = position
     }
 
-    return dump(render_data)
+    return render_data
 end

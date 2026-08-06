@@ -68,7 +68,13 @@ def _construct_group(
                         )  # Get current value or 0 if not exists
                         inventory[item] = current_value + value  # Add new value
 
-        if any(entity.warnings and entity.warnings[0] == "full" for entity in entities):
+        # serialize.lua emits "Belt output is full" for saturated belts. (The
+        # old Lua-literal parser truncated this unquoted string to its last
+        # word, which is why this check historically compared against "full".)
+        if any(
+            entity.warnings and any("full" in w for w in entity.warnings)
+            for entity in entities
+        ):
             status = EntityStatus.FULL_OUTPUT
         else:
             status = EntityStatus.WORKING
