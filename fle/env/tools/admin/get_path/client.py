@@ -63,16 +63,18 @@ class GetPath(Tool):
                 elif status == "busy":
                     raise Exception("Pathfinder is busy, try again later")
 
-                # Path is still pending - wait before retrying
+                # Path is still pending - wait before retrying. In
+                # deterministic mode this advances ticks so the async
+                # pathfinder makes progress on the otherwise-paused engine.
                 if status == "pending":
-                    sleep(wait_time)
+                    self.game_state.instance.settle(wait_time)
                     wait_time = min(
                         wait_time * 2, 1.0
                     )  # Exponential backoff, max 1 second
                     continue
 
                 # Unknown status - wait and retry
-                sleep(wait_time)
+                self.game_state.instance.settle(wait_time)
                 wait_time = min(wait_time * 2, 1.0)
 
             raise Exception(

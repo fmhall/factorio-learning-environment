@@ -108,6 +108,33 @@ class GameControl:
         self.set_speed(speed)
         self.pause()
 
+    def advance_ticks(self, ticks: int, timeout: float = 120.0):
+        """Deterministically step the paused engine forward by `ticks`.
+
+        Uses game.ticks_to_run, which runs exactly `ticks` ticks and then
+        re-pauses. RCON commands still execute while paused, so we poll
+        game.tick until the target is reached. Wall-clock duration depends on
+        UPS, but the simulated time advanced is exact.
+        """
+        if ticks <= 0:
+            return
+        self._is_paused = True
+        response = self.rcon_client.send_command(
+            f"/sc game.tick_paused = true; local t = game.tick; "
+            f"game.ticks_to_run = {int(ticks)}; rcon.print(t)"
+        )
+        target = int(response) + int(ticks)
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            now = int(self.rcon_client.send_command("/sc rcon.print(game.tick)"))
+            if now >= target:
+                return
+            time.sleep(0.01)
+        raise TimeoutError(
+            f"advance_ticks({ticks}) did not complete within {timeout}s "
+            f"(server too slow or stalled)"
+        )
+
     def get_elapsed_ticks(self):
         response = self.rcon_client.send_command(
             "/sc rcon.print(storage.elapsed_ticks or 0)"
@@ -183,8 +210,15 @@ class FactorioInstance:
         num_agents=1,
         reset_speed=10,
         reset_paused=False,
+        deterministic=False,
         **kwargs,
     ):
+        # Deterministic mode: the game stays paused and simulated time only
+        # advances through explicit tick stepping (wait_ticks/settle), so the
+        # same program sequence from the same state reproduces exactly.
+        self.deterministic = deterministic
+        if deterministic:
+            reset_paused = True
         self.id = str(uuid.uuid4())[:8]
         self.num_agents = num_agents
         self.persistent_vars = {}
@@ -362,6 +396,43 @@ class FactorioInstance:
     def set_speed_and_unpause(self, speed: float):
         """Set speed and ensure game is unpaused - common use case"""
         self.game_control.set_speed_and_unpause(speed)
+
+    def wait_ticks(self, ticks: int) -> float:
+        """Advance simulated time by exactly `ticks`.
+
+        Deterministic mode: steps the paused engine with advance_ticks.
+        Real-time mode: sleeps the equivalent wall-clock time at the current
+        game speed (the historical behavior).
+        Returns real seconds spent waiting.
+        """
+        if ticks <= 0:
+            return 0.0
+        start = time.time()
+        if self.deterministic:
+            self.game_control.advance_ticks(ticks)
+            return time.time() - start
+        speed = self.get_speed()
+        seconds = ticks / 60 / speed if speed > 0 else 0
+        if seconds:
+            time.sleep(seconds)
+        return seconds
+
+    def settle(self, seconds: float) -> float:
+        """Let the engine settle after a state-mutating command.
+
+        Real-time mode sleeps `seconds` of wall-clock time (the historical
+        magic-constant sleeps). Deterministic mode advances the equivalent
+        ticks at 1x so settling is part of simulated time and reproducible.
+        Returns real seconds spent waiting.
+        """
+        if seconds <= 0:
+            return 0.0
+        start = time.time()
+        if self.deterministic:
+            self.game_control.advance_ticks(max(1, int(seconds * 60)))
+            return time.time() - start
+        time.sleep(seconds)
+        return seconds
 
     def get_system_prompt(self, agent_idx: int = 0) -> str:
         """

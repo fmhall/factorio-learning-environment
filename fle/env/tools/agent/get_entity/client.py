@@ -51,7 +51,7 @@ class GetEntity(Tool):
                 while isinstance(metaclass, tuple):
                     metaclass = metaclass[1]
 
-                sleep(0.05)
+                self.game_state.instance.settle(0.05)
                 response, elapsed = self.execute(self.player_index, name, x, y)
 
                 if response is None or response == {} or isinstance(response, str):

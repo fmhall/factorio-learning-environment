@@ -40,13 +40,11 @@ class Sleep(Tool):
         # Update elapsed ticks on server
         _, _ = self.execute(seconds)
 
-        # Sleep for the appropriate real-world time based on elapsed ticks
+        # Advance simulated time to match the elapsed ticks
         ticks_after = self.game_state.instance.get_elapsed_ticks()
         ticks_added = ticks_after - ticks_before
         if ticks_added > 0:
-            game_speed = self.game_state.instance.get_speed()
-            real_world_sleep = ticks_added / 60 / game_speed if game_speed > 0 else 0
-            sleep(real_world_sleep)
+            real_world_sleep = self.game_state.instance.wait_ticks(ticks_added)
             # Track the accumulated sleep duration for this step
             Sleep._add_sleep_duration(real_world_sleep)
 

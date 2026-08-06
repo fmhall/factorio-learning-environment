@@ -467,7 +467,7 @@ class ConnectEntities(Tool):
                 entity_size=size,
             )
 
-            sleep(0.05)  # Allow pathing system time to compute
+            self.game_state.instance.settle(0.05)  # Allow pathing system time to compute
 
             response, _ = self.execute(
                 self.player_index,

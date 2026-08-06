@@ -82,8 +82,8 @@ class GetEntities(Tool):
                 else "[]"
             )
 
-            # We need to add a small 50ms sleep to ensure that the entities have updated after previous actions
-            sleep(0.1)
+            # Let the engine settle so entities have updated after previous actions
+            self.game_state.instance.settle(0.1)
 
             if position is None:
                 response, time_elapsed = self.execute(
