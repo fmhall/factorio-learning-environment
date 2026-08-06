@@ -1,4 +1,3 @@
-from time import sleep
 import threading
 
 from fle.env.tools import Tool

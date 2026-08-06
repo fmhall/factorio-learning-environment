@@ -1,4 +1,3 @@
-from time import sleep
 
 from fle.env.entities import Position, Entity
 

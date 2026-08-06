@@ -1,5 +1,4 @@
 import os
-from time import sleep
 from typing import List
 
 from fle.env.entities import Position

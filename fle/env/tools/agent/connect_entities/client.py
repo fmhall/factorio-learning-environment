@@ -1,4 +1,3 @@
-from time import sleep
 from typing import Union, Optional, List, Dict, cast, Set
 
 import numpy

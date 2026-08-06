@@ -1,4 +1,3 @@
-from time import sleep
 from typing import List, Set, Union
 
 from fle.env.entities import Position, Entity, EntityGroup
