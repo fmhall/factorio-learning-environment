@@ -399,12 +399,18 @@ Analyze the current state and write a Python program using the FLE API to progre
 
                     state.messages.append(step_message)
 
-                    # Generate response using Inspect's model with reasoning support
+                    # Generate response using Inspect's model with reasoning support.
+                    # reasoning_effort is only overridden when FLE_REASONING_EFFORT
+                    # is set; otherwise the CLI --reasoning-effort / provider
+                    # default applies. (A hardcoded "minimal" here used to
+                    # silently override the CLI and 400 on models that don't
+                    # support that value.)
                     generation_config = {
                         "max_tokens": 4096,  # More tokens for complex programs
-                        "reasoning_effort": "minimal",
-                        # "temperature": 0.1
                     }
+                    _effort = os.environ.get("FLE_REASONING_EFFORT")
+                    if _effort:
+                        generation_config["reasoning_effort"] = _effort
 
                     state.output = await get_model(transforms=["middle-out"]).generate(
                         input=state.messages,
