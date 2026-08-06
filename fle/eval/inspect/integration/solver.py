@@ -57,6 +57,21 @@ def _load_prompt_template(filename: str) -> Template:
     return Template(prompt_path.read_text())
 
 
+def _truncate_error(error: BaseException, limit: int = 4000) -> str:
+    """Bound an error string before it is fed back into the conversation.
+
+    Provider errors can echo the entire request payload; feeding that back
+    verbatim makes every subsequent request contain the previous one, doubling
+    context each step until the provider's size cap kills the trajectory.
+    Keep the head and tail (API errors put the meaningful message at the end).
+    """
+    text = str(error)
+    if len(text) <= limit:
+        return text
+    half = limit // 2
+    return f"{text[:half]}\n...[error truncated]...\n{text[-half:]}"
+
+
 def render_vision_image(gym_env: FactorioGymEnv) -> Tuple[Optional[str], Optional[str]]:
     """Render an image centered on the player using the full sprite renderer.
 
@@ -634,7 +649,7 @@ Continue to step {step + 2}."""
                     # Store error as feedback for next step instead of appending directly
                     # This avoids contiguous user messages
                     previous_feedback_content = (
-                        f"❌ Step {step + 1} error: {step_error}"
+                        f"❌ Step {step + 1} error: {_truncate_error(step_error)}"
                     )
                     previous_feedback_image = None
                     # Continue with next step rather than failing completely
@@ -1228,7 +1243,7 @@ def factorio_unbounded_solver():
                     # Store error as feedback for next step instead of appending directly
                     # This avoids contiguous user messages
                     previous_feedback_content = (
-                        f"❌ Step {step + 1} error: {step_error}"
+                        f"❌ Step {step + 1} error: {_truncate_error(step_error)}"
                     )
                     previous_feedback_image = None
                     # Continue with next step rather than failing completely
